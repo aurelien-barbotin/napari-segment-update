@@ -1,0 +1,23 @@
+name: napari-segment-update
+contributions:
+  commands:
+    - id: napari-segment-update.add_label
+      title: Add labels
+      python_name: napari_segment_update:labels_overlap
+    - id: napari-segment-update.merge_labels
+      title: Merge labels
+      python_name: napari_segment_update:manually_merge_labels
+    - id: napari-segment-update.split_labels
+      title: Split labels
+      python_name: napari_segment_update:manually_split_labels
+      
+  widgets:
+    - command: napari-segment-update.add_label  # note, same as command.id above
+      display_name: Add labels
+      autogenerate: true
+    - command: napari-segment-update.merge_labels  # note, same as command.id above
+      display_name: Merge labels
+      autogenerate: true
+    - command: napari-segment-update.split_labels  # note, same as command.id above
+      display_name: Split labels
+      autogenerate: true
