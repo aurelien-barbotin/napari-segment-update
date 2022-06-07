@@ -49,11 +49,12 @@ def labels_overlap(labels_layer: napari.layers.Labels,
 def manually_merge_labels(labels_layer: napari.layers.Labels, 
                           points_layer: napari.layers.Points, 
                           viewer: napari.Viewer):
+    
+    labels = np.asarray(labels_layer.data)
     if points_layer is None:
-        points_layer = viewer.add_points([])
+        points_layer = viewer.add_points([], ndim = labels.ndim)
         points_layer.mode = 'ADD'
         return
-    labels = np.asarray(labels_layer.data)
     points = points_layer.data
 
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
@@ -70,12 +71,13 @@ def manually_merge_labels(labels_layer: napari.layers.Labels,
 def manually_split_labels(labels_layer: Labels, 
                           points_layer: napari.layers.Points, 
                           viewer: napari.Viewer):
+    
+    labels = np.asarray(labels_layer.data)
     if points_layer is None:
-        points_layer = viewer.add_points([])
+        points_layer = viewer.add_points([], ndim = labels.ndim)
         points_layer.mode = 'ADD'
         return
 
-    labels = np.asarray(labels_layer.data)
     points = points_layer.data
 
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
@@ -89,10 +91,7 @@ def manually_split_labels(labels_layer: Labels,
     # origin: https://scikit-image.org/docs/dev/auto_examples/segmentation/plot_watershed.html
     from scipy import ndimage as ndi
     from skimage.segmentation import watershed
-    #from skimage.feature import peak_local_max
-
-    #distance = ndi.distance_transform_edt(binary)
-    #coords = peak_local_max(distance, footprint=np.ones((3, 3)), labels=binary)
+    
     mask = np.zeros(labels.shape, dtype=bool)
     for i in points:
         #mask[tuple(points)] = True
