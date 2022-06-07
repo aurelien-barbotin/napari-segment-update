@@ -10,6 +10,9 @@ contributions:
     - id: napari-segment-update.split_labels
       title: Split labels
       python_name: napari_segment_update:manually_split_labels
+    - id: napari-segment-update.delete_labels
+      title: Split labels
+      python_name: napari_segment_update:manually_delete_labels
       
   widgets:
     - command: napari-segment-update.add_label  # note, same as command.id above
@@ -21,3 +24,7 @@ contributions:
     - command: napari-segment-update.split_labels  # note, same as command.id above
       display_name: Split labels
       autogenerate: true
+    - command: napari-segment-update.delete_labels  # note, same as command.id above
+      display_name: Delete labels
+      autogenerate: true
+      
