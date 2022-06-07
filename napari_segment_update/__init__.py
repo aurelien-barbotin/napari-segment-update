@@ -5,28 +5,42 @@ import time
 import numpy as np
 
 from napari import Viewer
-from napari.layers import Image, Shapes
+from napari.layers import Image, Shapes, Labels
 from magicgui import magicgui
 import napari
 
 from napari.types import LabelsData, ShapesData
 
-def labels_overlap(labels: LabelsData, shapes: Shapes, viewer: napari.Viewer) -> LabelsData:
-    layerA = labels
+
+def labels_overlap(labels_layer: Labels, shapes: Shapes, viewer: napari.Viewer) -> None:
+    layerA = labels_layer.data
     layerB = shapes
     if layerB is None:
         viewer.add_shapes(ndim = layerA.ndim)
     if layerA is not None and layerB is not None:
         bin_A = layerA.copy()
         bin_B = layerB.to_labels()
-        out_shape = (max(bin_A.shape[0], bin_B.shape[0]),
-                     max(bin_A.shape[1], bin_B.shape[1]) )
-        print(out_shape)
-        bin_B[bin_B!=0]+=layerA.max()
-        out = np.zeros(out_shape)
-        out[:bin_A.shape[0],:bin_A.shape[1]]+=bin_A
-        out[:bin_B.shape[0],:bin_B.shape[1]]+=bin_B
-        return out.astype(int)
+        out_shape = ([max(bin_A.shape[j], bin_B.shape[j]) 
+                      for j in range(layerA.ndim)] )
+        if bin_B.ndim==2:
+            bin_B[bin_B!=0]+=layerA.max()
+        elif bin_B.ndim==3:
+            for j in range(bin_B.shape[0]):
+                bin_B[j,bin_B[j]!=0]+=layerA[j].max()
+        # merge two layers together
+        out = np.zeros(out_shape, dtype = int)
+        indsA =  np.indices(out.shape)         
+        inds_A_mask = np.array([indsA[j]< bin_A.shape[j] 
+                                 for j in range(out.ndim)]).astype(int)
+        inds_A_mask = inds_A_mask.sum(axis=0)
+        out[inds_A_mask==out.ndim]+=bin_A.reshape(-1)
+        
+        inds_B_mask = np.array([indsA[j]< bin_B.shape[j] 
+                                 for j in range(out.ndim)]).astype(int).sum(axis=0)
+        
+        out[inds_B_mask==out.ndim]+=bin_B.reshape(-1)
+        labels_layer.data = out
+        shapes.data = []
 
 # Stolen here 
 # https://www.napari-hub.org/plugins/napari-segment-blobs-and-things-with-membranes
@@ -49,7 +63,7 @@ def manually_merge_labels(labels_layer: napari.layers.Labels, points_layer: napa
     labels_layer.data = labels
     points_layer.data = []
 
-def manually_split_labels(labels_layer: napari.layers.Labels, points_layer: napari.layers.Points, viewer: napari.Viewer):
+def manually_split_labels(labels_layer: Labels, points_layer: napari.layers.Points, viewer: napari.Viewer):
     if points_layer is None:
         points_layer = viewer.add_points([])
         points_layer.mode = 'ADD'

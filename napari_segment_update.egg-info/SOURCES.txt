@@ -1,3 +1,5 @@
+LICENSE
+README.md
 pyproject.toml
 setup.cfg
 napari_segment_update/__init__.py
