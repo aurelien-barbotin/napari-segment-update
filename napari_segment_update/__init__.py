@@ -5,12 +5,13 @@ import time
 import numpy as np
 
 from napari import Viewer
-from napari.layers import Image, Shapes, Labels
+from napari.layers import Image, Shapes, Labels, Points
 from magicgui import magicgui
 import napari
+from napari import Viewer
+from magicgui.widgets import FunctionGui
 
 from napari.types import LabelsData, ShapesData
-
 
 def labels_overlap(labels_layer: napari.layers.Labels, 
                    shapes: napari.layers.Shapes, 
@@ -18,7 +19,9 @@ def labels_overlap(labels_layer: napari.layers.Labels,
     layerA = labels_layer.data
     layerB = shapes
     if layerB is None:
-        viewer.add_shapes(ndim = layerA.ndim)
+        layerB = viewer.add_shapes(ndim = layerA.ndim)
+        layerB.mode = "ADD_POLYGON"
+        return
     if layerA is not None and layerB is not None:
         bin_A = layerA.copy()
         bin_B = layerB.to_labels()
@@ -103,10 +106,13 @@ def manually_split_labels(labels_layer: Labels,
 
     labels_layer.data = labels
     points_layer.data = []
+    
 
-def manually_delete_labels(labels_layer: Labels, 
+
+def manually_delete_labels(
                            points_layer: napari.layers.Points, 
-                           viewer: napari.Viewer):
+                           labels_layer: Labels, 
+                           viewer: napari.Viewer)->None:
     
     labels = np.asarray(labels_layer.data)
     if points_layer is None:
@@ -123,3 +129,5 @@ def manually_delete_labels(labels_layer: Labels,
 
     labels_layer.data = labels
     points_layer.data = []
+
+# @Points.bind_key("D") 
