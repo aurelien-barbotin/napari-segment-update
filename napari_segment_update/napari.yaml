@@ -26,5 +26,5 @@ contributions:
       autogenerate: true
     - command: napari-segment-update.delete_labels  # note, same as command.id above
       display_name: Delete labels
-      autogenerate: true
+      autogenerate: False
       

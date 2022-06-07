@@ -1,26 +1,30 @@
-from typing import Any
-from napari_plugin_engine import napari_hook_implementation
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jun  7 20:12:27 2022
 
-import time
+@author: aurelienb
+"""
+
+import napari
+from magicgui import magicgui
+
+from scipy import ndimage as ndi
+from skimage.segmentation import watershed
 import numpy as np
 
-from napari import Viewer
-from napari.layers import Image, Shapes, Labels, Points
-from magicgui import magicgui
-import napari
-from napari import Viewer
-from magicgui.widgets import FunctionGui
+viewer = napari.Viewer()
 
-from napari.types import LabelsData, ShapesData
-
-def labels_overlap(labels_layer: napari.layers.Labels, 
-                   shapes: napari.layers.Shapes, 
-                   viewer: napari.Viewer) -> None:
+@magicgui
+def labels_overlap(viewer: napari.Viewer,
+                   labels_layer: napari.layers.Labels, 
+                   shapes: napari.layers.Shapes):
     layerA = labels_layer.data
     layerB = shapes
     if layerB is None:
         layerB = viewer.add_shapes(ndim = layerA.ndim)
         layerB.mode = "ADD_POLYGON"
+        layerB.bind_key('a', labels_overlap)
         return
     if layerA is not None and layerB is not None:
         bin_A = layerA.copy()
@@ -49,9 +53,11 @@ def labels_overlap(labels_layer: napari.layers.Labels,
 
 # Stolen here 
 # https://www.napari-hub.org/plugins/napari-segment-blobs-and-things-with-membranes
-def manually_merge_labels(labels_layer: napari.layers.Labels, 
-                          points_layer: napari.layers.Points, 
-                          viewer: napari.Viewer):
+@magicgui
+def manually_merge_labels(
+                        viewer: napari.Viewer,
+                        labels_layer: napari.layers.Labels, 
+                        points_layer: napari.layers.Points ):
     
     labels = np.asarray(labels_layer.data)
     if points_layer is None:
@@ -70,10 +76,11 @@ def manually_merge_labels(labels_layer: napari.layers.Labels,
 
     labels_layer.data = labels
     points_layer.data = []
-
-def manually_split_labels(labels_layer: Labels, 
-                          points_layer: napari.layers.Points, 
-                          viewer: napari.Viewer):
+    
+@magicgui
+def manually_split_labels(viewer: napari.Viewer,
+                          labels_layer: napari.layers.Labels, 
+                          points_layer: napari.layers.Points):
     
     labels = np.asarray(labels_layer.data)
     if points_layer is None:
@@ -90,10 +97,6 @@ def manually_split_labels(labels_layer: Labels,
     new_label_id = min(label_ids)
     for l in label_ids:
         binary[labels == l] = True
-
-    # origin: https://scikit-image.org/docs/dev/auto_examples/segmentation/plot_watershed.html
-    from scipy import ndimage as ndi
-    from skimage.segmentation import watershed
     
     mask = np.zeros(labels.shape, dtype=bool)
     for i in points:
@@ -107,13 +110,11 @@ def manually_split_labels(labels_layer: Labels,
     labels_layer.data = labels
     points_layer.data = []
     
-from magicgui import magic_factory
-# @Points.bind_key("D")
-@magic_factory()
-def manually_delete_labels(
-                           points_layer: "napari.layers.Points", 
-                           labels_layer: "napari.layers.Labels", 
-                           viewer: "napari.Viewer"):
+@magicgui
+def manually_delete_labels(viewer: napari.Viewer,
+                           points_layer: napari.layers.Points, 
+                           labels_layer: napari.layers.Labels
+                           ):
     if labels_layer is None:
         print('labels is None')
         return
@@ -124,16 +125,21 @@ def manually_delete_labels(
         points_layer.mode = 'ADD'
         return
     points = points_layer.data
-    print(points)
-    print(labels.shape)
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
-    print(label_ids)
     for l in label_ids:
             labels[labels == l] = 0
 
     labels_layer.data = labels
     points_layer.data = []
-    
-"""@Viewer.bind_key("D",manually_delete_labels)
-def piou():
-    pass"""
+
+viewer.window.add_dock_widget(manually_merge_labels,name='merge labels')
+viewer.window.add_dock_widget(manually_split_labels,name='split labels')
+viewer.window.add_dock_widget(labels_overlap,name='add labels')
+viewer.window.add_dock_widget(manually_delete_labels,name="delete labels")
+# call my_widget when pressing `a`
+# of course, you'll need a labels layer for it to work
+viewer.bind_key('r', manually_merge_labels)
+viewer.bind_key('d', manually_delete_labels)
+viewer.bind_key('s', manually_split_labels)
+viewer.bind_key('a', labels_overlap)
+napari.run()
