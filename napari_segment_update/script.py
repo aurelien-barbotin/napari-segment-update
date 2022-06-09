@@ -132,10 +132,10 @@ def manually_delete_labels(viewer: napari.Viewer,
     labels_layer.data = labels
     points_layer.data = []
 
-viewer.window.add_dock_widget(manually_merge_labels,name='merge labels')
-viewer.window.add_dock_widget(manually_split_labels,name='split labels')
-viewer.window.add_dock_widget(labels_overlap,name='add labels')
-viewer.window.add_dock_widget(manually_delete_labels,name="delete labels")
+viewer.window.add_dock_widget(manually_merge_labels,name='merge labels (R)')
+viewer.window.add_dock_widget(manually_split_labels,name='split labels (S)')
+viewer.window.add_dock_widget(labels_overlap,name='add labels (A)')
+viewer.window.add_dock_widget(manually_delete_labels,name="delete labels (D)")
 # call my_widget when pressing `a`
 # of course, you'll need a labels layer for it to work
 viewer.bind_key('r', manually_merge_labels)
