@@ -19,6 +19,7 @@ viewer = napari.Viewer()
 def labels_overlap(viewer: napari.Viewer,
                    labels_layer: napari.layers.Labels, 
                    shapes: napari.layers.Shapes):
+    
     layerA = labels_layer.data
     layerB = shapes
     if layerB is None:
@@ -26,14 +27,19 @@ def labels_overlap(viewer: napari.Viewer,
         layerB.mode = "ADD_POLYGON"
         layerB.bind_key('a', labels_overlap)
         return
+    # useless as shortcuts will work only from label not other layers
+    # viewer.layers.selection.select_only(shapes)
     if layerA is not None and layerB is not None:
         bin_A = layerA.copy()
         bin_B = layerB.to_labels()
-        out_shape = ([max(bin_A.shape[j], bin_B.shape[j]) 
-                      for j in range(layerA.ndim)] )
+        out_shape = bin_A.shape
+        
         if bin_B.ndim==2:
             bin_B[bin_B!=0]+=layerA.max()
+            bin_B = bin_B[:out_shape[0],:out_shape[1]]
         elif bin_B.ndim==3:
+            
+            bin_B = bin_B[:out_shape[0],:out_shape[1],:out_shape[2]]
             for j in range(bin_B.shape[0]):
                 bin_B[j,bin_B[j]!=0]+=layerA[j].max()
         # merge two layers together
