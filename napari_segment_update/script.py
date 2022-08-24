@@ -38,10 +38,10 @@ def labels_overlap(viewer: napari.Viewer,
             bin_B[bin_B!=0]+=layerA.max()
             bin_B = bin_B[:out_shape[0],:out_shape[1]]
         elif bin_B.ndim==3:
-            
             bin_B = bin_B[:out_shape[0],:out_shape[1],:out_shape[2]]
             for j in range(bin_B.shape[0]):
                 bin_B[j,bin_B[j]!=0]+=layerA[j].max()
+                
         # merge two layers together
         out = np.zeros(out_shape, dtype = int)
         indsA =  np.indices(out.shape)         
@@ -52,7 +52,7 @@ def labels_overlap(viewer: napari.Viewer,
         
         inds_B_mask = np.array([indsA[j]< bin_B.shape[j] 
                                  for j in range(out.ndim)]).astype(int).sum(axis=0)
-        
+        bin_B[bin_A[inds_B_mask==out.ndim].reshape(bin_B.shape)!=0] = 0
         out[inds_B_mask==out.ndim]+=bin_B.reshape(-1)
         labels_layer.data = out
         shapes.data = []
@@ -142,8 +142,7 @@ viewer.window.add_dock_widget(manually_merge_labels,name='merge labels (R)')
 viewer.window.add_dock_widget(manually_split_labels,name='split labels (S)')
 viewer.window.add_dock_widget(labels_overlap,name='add labels (A)')
 viewer.window.add_dock_widget(manually_delete_labels,name="delete labels (D)")
-# call my_widget when pressing `a`
-# of course, you'll need a labels layer for it to work
+
 viewer.bind_key('r', manually_merge_labels)
 viewer.bind_key('d', manually_delete_labels)
 viewer.bind_key('s', manually_split_labels)
