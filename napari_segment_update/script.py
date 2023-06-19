@@ -37,8 +37,8 @@ def labels_overlap(viewer: napari.Viewer,
         if bin_B.ndim==2:
             bin_B[bin_B!=0]+=layerA.max()
             bin_B = bin_B[:out_shape[0],:out_shape[1]]
-        elif bin_B.ndim==3:
             
+        elif bin_B.ndim==3:
             bin_B = bin_B[:out_shape[0],:out_shape[1],:out_shape[2]]
             for j in range(bin_B.shape[0]):
                 bin_B[j,bin_B[j]!=0]+=layerA[j].max()
@@ -132,8 +132,14 @@ def manually_delete_labels(viewer: napari.Viewer,
         return
     points = points_layer.data
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
-    for l in label_ids:
-            labels[labels == l] = 0
+    
+    if len(viewer.dims)==3:
+        current_step = viewer.dims.current_step[0]
+        for l in label_ids:
+                labels[current_step,labels[current_step] == l] = 0
+    elif len(viewer.dims)==2:
+        for l in label_ids:
+                labels[labels == l] = 0
 
     labels_layer.data = labels
     points_layer.data = []
