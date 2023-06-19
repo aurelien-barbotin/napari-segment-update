@@ -76,16 +76,16 @@ def manually_merge_labels(
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
 
     # replace labels with minimum of the selected labels
-    if len(viewer.dims)==2:
-        new_label_id = min(label_ids)
+    new_label_id = min(label_ids)
+    if len(viewer.dims.current_step)==2:
         for l in label_ids:
             if l != new_label_id:
                 labels[labels == l] = new_label_id
-    elif len(viewer.dims)==3:
+    elif len(viewer.dims.current_step)==3:
         current_step = viewer.dims.current_step[0]
         for l in label_ids:
             if l != new_label_id:
-                labels[current_step,labels == l] = new_label_id
+                labels[current_step,labels[current_step] == l] = new_label_id
     else:
         return ValueError('Unsupported data format')
     labels_layer.data = labels
@@ -107,7 +107,7 @@ def manually_split_labels(viewer: napari.Viewer,
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
 
     # make a binary image first
-    if len(viewer.dims)==2:
+    if len(viewer.dims.current_step)==2:
         binary = np.zeros(labels.shape, dtype=bool)
         for l in label_ids:
             binary[labels == l] = True
@@ -121,17 +121,17 @@ def manually_split_labels(viewer: napari.Viewer,
         new_labels = watershed(binary, markers, mask=binary)
         labels[binary] = new_labels[binary] + labels.max()
         
-    elif len(viewer.dims)==3:
+    elif len(viewer.dims.current_step)==3:
         current_step = viewer.dims.current_step[0]
         binary = np.zeros(labels[current_step].shape, dtype=bool)
         for l in label_ids:
             binary[labels[current_step] == l] = True
         
-        mask = np.zeros(labels[current_step].shape, dtype=bool)
+        mask = np.zeros(labels.shape, dtype=bool)
         for i in points:
             #mask[tuple(points)] = True
             mask[tuple([int(j) for j in i])] = True
-    
+        mask=mask[current_step]
         markers, _ = ndi.label(mask)
         new_labels = watershed(binary, markers, mask=binary)
         labels[current_step,binary] = new_labels[binary] + labels.max()
@@ -157,12 +157,12 @@ def manually_delete_labels(viewer: napari.Viewer,
         return
     points = points_layer.data
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
-    
-    if len(viewer.dims)==3:
+
+    if len(viewer.dims.current_step)==3:
         current_step = viewer.dims.current_step[0]
         for l in label_ids:
                 labels[current_step,labels[current_step] == l] = 0
-    elif len(viewer.dims)==2:
+    elif len(viewer.dims.current_step)==2:
         for l in label_ids:
                 labels[labels == l] = 0
     else:
