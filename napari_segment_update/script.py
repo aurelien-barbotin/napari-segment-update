@@ -19,7 +19,7 @@ viewer = napari.Viewer()
 def labels_overlap(viewer: napari.Viewer,
                    labels_layer: napari.layers.Labels, 
                    shapes: napari.layers.Shapes):
-    
+    """Also called add labels"""
     layerA = labels_layer.data
     layerB = shapes
     if layerB is None:
@@ -37,10 +37,7 @@ def labels_overlap(viewer: napari.Viewer,
         if bin_B.ndim==2:
             bin_B[bin_B!=0]+=layerA.max()
             bin_B = bin_B[:out_shape[0],:out_shape[1]]
-<<<<<<< HEAD
             
-=======
->>>>>>> 482a751a7f89f22a3812d343d9e7b09aafb93dfb
         elif bin_B.ndim==3:
             bin_B = bin_B[:out_shape[0],:out_shape[1],:out_shape[2]]
             for j in range(bin_B.shape[0]):
@@ -79,11 +76,18 @@ def manually_merge_labels(
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
 
     # replace labels with minimum of the selected labels
-    new_label_id = min(label_ids)
-    for l in label_ids:
-        if l != new_label_id:
-            labels[labels == l] = new_label_id
-
+    if len(viewer.dims)==2:
+        new_label_id = min(label_ids)
+        for l in label_ids:
+            if l != new_label_id:
+                labels[labels == l] = new_label_id
+    elif len(viewer.dims)==3:
+        current_step = viewer.dims.current_step[0]
+        for l in label_ids:
+            if l != new_label_id:
+                labels[current_step,labels == l] = new_label_id
+    else:
+        return ValueError('Unsupported data format')
     labels_layer.data = labels
     points_layer.data = []
     
@@ -103,19 +107,36 @@ def manually_split_labels(viewer: napari.Viewer,
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
 
     # make a binary image first
-    binary = np.zeros(labels.shape, dtype=bool)
-    new_label_id = min(label_ids)
-    for l in label_ids:
-        binary[labels == l] = True
+    if len(viewer.dims)==2:
+        binary = np.zeros(labels.shape, dtype=bool)
+        for l in label_ids:
+            binary[labels == l] = True
+        
+        mask = np.zeros(labels.shape, dtype=bool)
+        for i in points:
+            #mask[tuple(points)] = True
+            mask[tuple([int(j) for j in i])] = True
     
-    mask = np.zeros(labels.shape, dtype=bool)
-    for i in points:
-        #mask[tuple(points)] = True
-        mask[tuple([int(j) for j in i])] = True
-
-    markers, _ = ndi.label(mask)
-    new_labels = watershed(binary, markers, mask=binary)
-    labels[binary] = new_labels[binary] + labels.max()
+        markers, _ = ndi.label(mask)
+        new_labels = watershed(binary, markers, mask=binary)
+        labels[binary] = new_labels[binary] + labels.max()
+        
+    elif len(viewer.dims)==3:
+        current_step = viewer.dims.current_step[0]
+        binary = np.zeros(labels[current_step].shape, dtype=bool)
+        for l in label_ids:
+            binary[labels[current_step] == l] = True
+        
+        mask = np.zeros(labels[current_step].shape, dtype=bool)
+        for i in points:
+            #mask[tuple(points)] = True
+            mask[tuple([int(j) for j in i])] = True
+    
+        markers, _ = ndi.label(mask)
+        new_labels = watershed(binary, markers, mask=binary)
+        labels[current_step,binary] = new_labels[binary] + labels.max()
+    else:
+        raise ValueError('Unsupported data format')
 
     labels_layer.data = labels
     points_layer.data = []
@@ -144,7 +165,8 @@ def manually_delete_labels(viewer: napari.Viewer,
     elif len(viewer.dims)==2:
         for l in label_ids:
                 labels[labels == l] = 0
-
+    else:
+        return ValueError('Unsupported dimension')
     labels_layer.data = labels
     points_layer.data = []
 
