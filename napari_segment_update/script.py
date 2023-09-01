@@ -77,8 +77,8 @@ def manually_merge_labels(
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
 
     # replace labels with minimum of the selected labels
+    new_label_id = min(label_ids)
     if viewer.dims.ndim==2:
-        new_label_id = min(label_ids)
         for l in label_ids:
             if l != new_label_id:
                 labels[labels == l] = new_label_id
