@@ -12,6 +12,7 @@ from magicgui import magicgui
 from scipy import ndimage as ndi
 from skimage.segmentation import watershed
 import numpy as np
+from typing_extensions import Annotated
 
 viewer = napari.Viewer()
 
@@ -76,12 +77,12 @@ def manually_merge_labels(
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
 
     # replace labels with minimum of the selected labels
-    if len(viewer.dims)==2:
+    if viewer.dims.ndim==2:
         new_label_id = min(label_ids)
         for l in label_ids:
             if l != new_label_id:
                 labels[labels == l] = new_label_id
-    elif len(viewer.dims)==3:
+    elif viewer.dims.ndim==3:
         current_step = viewer.dims.current_step[0]
         for l in label_ids:
             if l != new_label_id:
@@ -90,12 +91,11 @@ def manually_merge_labels(
         return ValueError('Unsupported data format')
     labels_layer.data = labels
     points_layer.data = []
-    
-@magicgui
+
+@magicgui(call_button="run", labels_layer={'label':'Label'}, points_layer={'label':'Points'})
 def manually_split_labels(viewer: napari.Viewer,
                           labels_layer: napari.layers.Labels, 
                           points_layer: napari.layers.Points):
-    
     labels = np.asarray(labels_layer.data)
     if points_layer is None:
         points_layer = viewer.add_points([], ndim = labels.ndim)
@@ -107,7 +107,7 @@ def manually_split_labels(viewer: napari.Viewer,
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
 
     # make a binary image first
-    if len(viewer.dims)==2:
+    if viewer.dims.ndim==2:
         binary = np.zeros(labels.shape, dtype=bool)
         for l in label_ids:
             binary[labels == l] = True
@@ -121,7 +121,7 @@ def manually_split_labels(viewer: napari.Viewer,
         new_labels = watershed(binary, markers, mask=binary)
         labels[binary] = new_labels[binary] + labels.max()
         
-    elif len(viewer.dims)==3:
+    elif viewer.dims.ndim==3:
         current_step = viewer.dims.current_step[0]
         binary = np.zeros(labels[current_step].shape, dtype=bool)
         for l in label_ids:
@@ -140,11 +140,13 @@ def manually_split_labels(viewer: napari.Viewer,
 
     labels_layer.data = labels
     points_layer.data = []
-    
+    return
+
 @magicgui
 def manually_delete_labels(viewer: napari.Viewer,
                            points_layer: napari.layers.Points, 
-                           labels_layer: napari.layers.Labels
+                           labels_layer: napari.layers.Labels,
+                           keep_points: bool,
                            ):
     if labels_layer is None:
         print('labels is None')
@@ -158,25 +160,29 @@ def manually_delete_labels(viewer: napari.Viewer,
     points = points_layer.data
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
     
-    if len(viewer.dims)==3:
+    if viewer.dims.ndim==3:
         current_step = viewer.dims.current_step[0]
         for l in label_ids:
                 labels[current_step,labels[current_step] == l] = 0
-    elif len(viewer.dims)==2:
+    elif viewer.dims.ndim==2:
         for l in label_ids:
                 labels[labels == l] = 0
     else:
         return ValueError('Unsupported dimension')
     labels_layer.data = labels
-    points_layer.data = []
+    if not keep_points:
+        points_layer.data = []
+
 
 viewer.window.add_dock_widget(manually_merge_labels,name='merge labels (R)')
-viewer.window.add_dock_widget(manually_split_labels,name='split labels (S)')
 viewer.window.add_dock_widget(labels_overlap,name='add labels (A)')
 viewer.window.add_dock_widget(manually_delete_labels,name="delete labels (D)")
+viewer.window.add_dock_widget(manually_split_labels,name='split labels (S)')
 
-viewer.bind_key('r', manually_merge_labels)
-viewer.bind_key('d', manually_delete_labels)
-viewer.bind_key('s', manually_split_labels)
-viewer.bind_key('a', labels_overlap)
+labelmerger=lambda x: manually_merge_labels()
+viewer.bind_key('r', labelmerger)
+
+viewer.bind_key('d', lambda x: manually_delete_labels())
+viewer.bind_key('a', lambda x:labels_overlap())
+viewer.bind_key('s', lambda x: manually_split_labels())
 napari.run()
