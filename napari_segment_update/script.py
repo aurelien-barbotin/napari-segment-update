@@ -23,10 +23,10 @@ def labels_overlap(viewer: napari.Viewer,
     """Also called add labels"""
     layerA = labels_layer.data
     layerB = shapes
-    if layerB is None:
+    if layerB is None:  
         layerB = viewer.add_shapes(ndim = layerA.ndim)
         layerB.mode = "ADD_POLYGON"
-        layerB.bind_key('a', labels_overlap)
+        layerB.bind_key('a', lambda x: labels_overlap())
         return
     # useless as shortcuts will work only from label not other layers
     # viewer.layers.selection.select_only(shapes)
@@ -180,9 +180,10 @@ viewer.window.add_dock_widget(manually_delete_labels,name="delete labels (D)")
 viewer.window.add_dock_widget(manually_split_labels,name='split labels (S)')
 
 labelmerger=lambda x: manually_merge_labels()
-viewer.bind_key('r', labelmerger)
 
+viewer.bind_key('r', labelmerger)
 viewer.bind_key('d', lambda x: manually_delete_labels())
-viewer.bind_key('a', lambda x:labels_overlap())
+labeloverlapper = lambda x: labels_overlap()
+viewer.bind_key('a',labeloverlapper )
 viewer.bind_key('s', lambda x: manually_split_labels())
 napari.run()
