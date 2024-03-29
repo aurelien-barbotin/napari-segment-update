@@ -146,7 +146,7 @@ def manually_split_labels(viewer: napari.Viewer,
 def manually_delete_labels(viewer: napari.Viewer,
                            points_layer: napari.layers.Points, 
                            labels_layer: napari.layers.Labels,
-                           keep_points: bool,
+                           delete_all_atpos: bool,
                            ):
     if labels_layer is None:
         print('labels is None')
@@ -162,16 +162,25 @@ def manually_delete_labels(viewer: napari.Viewer,
 
     if viewer.dims.ndim==3:
         current_step = viewer.dims.current_step[0]
-        for l in label_ids:
-                labels[current_step,labels[current_step] == l] = 0
+        
+        if delete_all_atpos:
+            for lid in label_ids:
+                print(labels.shape[0])
+                for cs in range(labels.shape[0]):
+                    labs = np.unique(labels[cs,labels[current_step] == lid])
+                    labs = [w for w in labs if w!=0]
+                    for ll in labs:
+                        labels[cs,labels[cs] == ll] = 0
+        else:
+            for l in label_ids:
+                    labels[current_step,labels[current_step] == l] = 0
     elif viewer.dims.ndim==2:
         for l in label_ids:
                 labels[labels == l] = 0
     else:
         return ValueError('Unsupported dimension')
     labels_layer.data = labels
-    if not keep_points:
-        points_layer.data = []
+    points_layer.data = []
 
 
 viewer.window.add_dock_widget(manually_merge_labels,name='merge labels (R)')
