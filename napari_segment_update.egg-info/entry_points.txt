@@ -1,2 +1,0 @@
-[napari.manifest]
-napari-segment-update = napari_segment_update:napari.yaml
