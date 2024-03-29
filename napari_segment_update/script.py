@@ -159,16 +159,19 @@ def manually_delete_labels(viewer: napari.Viewer,
         return
     points = points_layer.data
     label_ids = [labels.item(tuple([int(j) for j in i])) for i in points]
-
+    label_ids = list(filter(lambda x: x!=0,label_ids))
     if viewer.dims.ndim==3:
         current_step = viewer.dims.current_step[0]
         
         if delete_all_atpos:
             for lid in label_ids:
-                print(labels.shape[0])
+                print("labels id to delete", labels.shape[0], lid)
+                msk_todelete = labels[current_step] == lid
                 for cs in range(labels.shape[0]):
-                    labs = np.unique(labels[cs,labels[current_step] == lid])
+                    labs = np.unique(labels[cs,msk_todelete])
                     labs = [w for w in labs if w!=0]
+                    print("frame  {}, labs: {}".format(cs,labs))
+                    print('Labels shape:',labels.shape)
                     for ll in labs:
                         labels[cs,labels[cs] == ll] = 0
         else:
