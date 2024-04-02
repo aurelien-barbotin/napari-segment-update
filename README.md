@@ -1,6 +1,10 @@
 # napari-segment-update
 
-Napari plugin to manually correct segmentation results. This plugin is meant to be used to correct segmentation errors from algorithms like cellpose or omnipose. Such algorithms can make 4 types of operations, corresponding to the 4 types of errors the segmentation algorithm can make:
+Napari plugin to manually correct segmentation results. 
+
+![A screenshot of the napari-segment-update](https://github.com/aurelien-barbotin/napari-segment-update/blob/main/images/Screenshot-napari-segment-update.png)
+
+This plugin is meant to be used to correct segmentation errors from algorithms like cellpose or omnipose. Such algorithms can make 4 types of operations, corresponding to the 4 types of errors the segmentation algorithm can make:
 
 * Delete labels: Place a series of points above the masks you want to delete, then run delete to remove these maks. In case where the segmentation algorithm invented a mask where there were no cells
 * Add labels: Manually draw a shape, then convert it to a mask and add it to the selected labels layers. In case the segmentation algorithm missed a mask
@@ -17,6 +21,8 @@ Run with
 	python napari_segment_update/script.py
 
 If you are on a ProCeD analysis computer, simply double click on run_napari.bat located in Documents/Python Scripts
+
+Load your masks, either with drag and drop or using File > Open File(s). Once loaded, the masks 
 
 ## Install
 
